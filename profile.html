@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitCore RPG — ตั้งค่าโปรไฟล์และเป้าหมาย</title>
+  <!-- เรียกใช้ Design System กลาง -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app-layout">
+    <!-- แถบเมนูกลางจาก js/nav.js -->
+    <div id="fitcore-nav"></div>
+
+    <!-- พื้นที่เนื้อหาหลัก -->
+    <main class="main-content">
+      <div class="container">
+        <header class="page-header">
+          <div>
+            <h1 class="page-title">โปรไฟล์ตัวละคร & เป้าหมาย</h1>
+            <p class="page-subtitle">
+              ปรับแต่งข้อมูลร่างกายและเลือกสายการฝึก เพื่อคำนวณเควสและโภชนาการที่เหมาะกับคุณ
+            </p>
+          </div>
+          <a href="dashboard.html" class="btn-outline btn-sm">ไปที่แดชบอร์ด →</a>
+        </header>
+
+        <!-- การ์ดสรุปสถานะ RPG และค่าสุขภาพเบื้องต้น -->
+        <section class="card mb-3">
+          <div class="grid-2" style="align-items: center;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <h2 class="card-title" id="summary-name">นักรบฟิตคอร์</h2>
+                <span class="badge badge-primary" id="summary-level">Lv. 1</span>
+                <span class="badge badge-success" id="summary-rank">Bronze Novice</span>
+              </div>
+              <p class="text-muted mt-1" style="font-size: 0.9rem;">
+                เป้าหมายปัจจุบัน: <strong class="text-accent" id="summary-goal">Health</strong>
+                • สถิติต่อเนื่อง <strong id="summary-streak">0</strong> วัน
+              </p>
+              <div class="mt-2">
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px;">
+                  <span class="text-muted">ค่าประสบการณ์ (EXP)</span>
+                  <span id="summary-exp-text">0 / 500 EXP</span>
+                </div>
+                <div class="progress-bar progress-bar-lg">
+                  <div class="progress-fill" id="summary-exp-bar" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ค่า BMI และแคลอรี่แนะนำที่คำนวณแบบเรียลไทม์ -->
+            <div class="grid-2 gap-sm">
+              <div class="card" style="background: var(--bg-main); padding: 16px;">
+                <div class="text-muted" style="font-size: 0.8rem;">ดัชนีมวลกาย (BMI)</div>
+                <div style="font-size: 1.6rem; font-weight: 700; font-family: var(--font-heading);" id="bmi-value">--</div>
+                <span class="badge badge-primary mt-1" id="bmi-label">รอข้อมูล</span>
+              </div>
+              <div class="card" style="background: var(--bg-main); padding: 16px;">
+                <div class="text-muted" style="font-size: 0.8rem;">พลังงานแนะนำ / วัน</div>
+                <div style="font-size: 1.6rem; font-weight: 700; font-family: var(--font-heading);" id="calorie-value">--</div>
+                <span class="badge badge-warning mt-1" id="calorie-note">kcal โดยประมาณ</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ฟอร์มตั้งค่าข้อมูลส่วนตัวและเป้าหมาย -->
+        <form id="profile-form" novalidate>
+          <!-- ส่วนที่ 1: ข้อมูลส่วนตัว -->
+          <section class="card mb-3">
+            <div class="card-header">
+              <h2 class="card-title">1. ข้อมูลส่วนตัว</h2>
+              <span class="badge badge-primary">Character Stats</span>
+            </div>
+
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label" for="input-name">ชื่อตัวละคร</label>
+                <input type="text" id="input-name" class="form-control" placeholder="ชื่อของคุณ" required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="input-age">อายุ (ปี)</label>
+                <input type="number" id="input-age" class="form-control" min="10" max="100" required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="input-gender">เพศ</label>
+                <select id="input-gender" class="form-select">
+                  <option value="male">ชาย</option>
+                  <option value="female">หญิง</option>
+                  <option value="other">ไม่ระบุ</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="input-time">ช่วงเวลาที่สะดวกออกกำลังกาย</label>
+                <select id="input-time" class="form-select">
+                  <option value="morning">ช่วงเช้า (05:00 - 10:00)</option>
+                  <option value="afternoon">ช่วงกลางวัน (11:00 - 15:00)</option>
+                  <option value="evening">ช่วงเย็น (16:00 - 20:00)</option>
+                  <option value="night">ช่วงดึก (20:00 - 23:00)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="input-weight">น้ำหนัก (กิโลกรัม)</label>
+                <input type="number" id="input-weight" class="form-control" min="25" max="250" step="0.1" required />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="input-height">ส่วนสูง (เซนติเมตร)</label>
+                <input type="number" id="input-height" class="form-control" min="100" max="240" step="0.5" required />
+              </div>
+            </div>
+          </section>
+
+          <!-- ส่วนที่ 2: การ์ดเลือกเป้าหมาย 3 รูปแบบ (Health / Cut / Bulk) -->
+          <section class="card mb-3">
+            <div class="card-header">
+              <h2 class="card-title">2. เลือกสายเป้าหมาย (RPG Class)</h2>
+              <span class="badge badge-warning">เลือก 1 รูปแบบ</span>
+            </div>
+
+            <div class="grid-3">
+              <!-- เป้าหมาย Health -->
+              <div class="goal-card" data-goal="Health" tabindex="0" role="radio" aria-checked="false">
+                <span class="goal-check">✓</span>
+                <div class="goal-icon">💚</div>
+                <h3 style="font-size: 1.15rem;">Health (สมดุล & แข็งแรง)</h3>
+                <p class="text-muted" style="font-size: 0.88rem;">
+                  เน้นรักษาสุขภาพหัวใจ เพิ่มความฟิต ลดความเหนื่อยล้า และคงน้ำหนักตัวให้สมดุล
+                </p>
+                <div class="mt-1">
+                  <span class="badge badge-success">+ สมดุลคาร์ดิโอ & เวท</span>
+                </div>
+              </div>
+
+              <!-- เป้าหมาย Cut -->
+              <div class="goal-card" data-goal="Cut" tabindex="0" role="radio" aria-checked="false">
+                <span class="goal-check">✓</span>
+                <div class="goal-icon">🔥</div>
+                <h3 style="font-size: 1.15rem;">Cut (ลดไขมัน & ลีน)</h3>
+                <p class="text-muted" style="font-size: 0.88rem;">
+                  เน้นเผาผลาญพลังงาน คุมแคลอรี่แบบขาดดุลเล็กน้อย เพื่อลดไขมันส่วนเกินและรักษากล้ามเนื้อ
+                </p>
+                <div class="mt-1">
+                  <span class="badge badge-warning">+ HIIT & โปรตีนสูง</span>
+                </div>
+              </div>
+
+              <!-- เป้าหมาย Bulk -->
+              <div class="goal-card" data-goal="Bulk" tabindex="0" role="radio" aria-checked="false">
+                <span class="goal-check">✓</span>
+                <div class="goal-icon">💪</div>
+                <h3 style="font-size: 1.15rem;">Bulk (เพิ่มกล้ามเนื้อ)</h3>
+                <p class="text-muted" style="font-size: 0.88rem;">
+                  เน้นสร้างมวลกล้ามเนื้อและพละกำลัง เพิ่มพลังงานและโปรตีนให้เพียงพอต่อการเติบโต
+                </p>
+                <div class="mt-1">
+                  <span class="badge badge-primary">+ เวทเทรนนิ่งหนัก</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ปุ่มบันทึกข้อมูล -->
+          <div style="display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap;">
+            <button type="button" id="reset-form-btn" class="btn-outline">คืนค่าล่าสุด</button>
+            <button type="submit" class="btn-primary">💾 บันทึกข้อมูลโปรไฟล์</button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast แจ้งเตือนเมื่อบันทึกสำเร็จ -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- โหลดระบบข้อมูลและแถบเมนูกลาง -->
+  <script src="js/mock-data.js"></script>
+  <script src="js/nav.js"></script>
+  <script>
+    (function () {
+      const form = document.getElementById('profile-form');
+      const goalCards = document.querySelectorAll('.goal-card');
+      const resetBtn = document.getElementById('reset-form-btn');
+      const toastEl = document.getElementById('toast');
+
+      const nameInput = document.getElementById('input-name');
+      const ageInput = document.getElementById('input-age');
+      const genderInput = document.getElementById('input-gender');
+      const timeInput = document.getElementById('input-time');
+      const weightInput = document.getElementById('input-weight');
+      const heightInput = document.getElementById('input-height');
+
+      let selectedGoal = 'Health';
+      let toastTimer = null;
+
+      /** แสดง Toast แจ้งเตือนมุมขวาล่าง */
+      function showToast(msg) {
+        toastEl.textContent = msg;
+        toastEl.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () {
+          toastEl.classList.remove('show');
+        }, 2800);
+      }
+
+      /** เลือกการ์ดเป้าหมายและอัปเดตสถานะ UI */
+      function setGoalSelection(goal) {
+        selectedGoal = ['Health', 'Cut', 'Bulk'].includes(goal) ? goal : 'Health';
+        goalCards.forEach(function (card) {
+          const isMatch = card.getAttribute('data-goal') === selectedGoal;
+          card.classList.toggle('selected', isMatch);
+          card.setAttribute('aria-checked', isMatch ? 'true' : 'false');
+        });
+        updateCalculatedStats();
+      }
+
+      /** คำนวณ BMI และแคลอรี่แนะนำแบบเรียลไทม์ */
+      function updateCalculatedStats() {
+        const weight = parseFloat(weightInput.value) || 0;
+        const height = parseFloat(heightInput.value) || 0;
+        const age = parseInt(ageInput.value, 10) || 24;
+        const gender = genderInput.value;
+
+        const bmiValueEl = document.getElementById('bmi-value');
+        const bmiLabelEl = document.getElementById('bmi-label');
+        const calValueEl = document.getElementById('calorie-value');
+        const calNoteEl = document.getElementById('calorie-note');
+
+        if (weight > 0 && height > 0) {
+          const hMeters = height / 100;
+          const bmi = weight / (hMeters * hMeters);
+          bmiValueEl.textContent = bmi.toFixed(1);
+
+          if (bmi < 18.5) {
+            bmiLabelEl.textContent = 'น้ำหนักน้อย';
+            bmiLabelEl.className = 'badge badge-warning mt-1';
+          } else if (bmi < 23) {
+            bmiLabelEl.textContent = 'สมส่วน (เกณฑ์เอเชีย)';
+            bmiLabelEl.className = 'badge badge-success mt-1';
+          } else if (bmi < 25) {
+            bmiLabelEl.textContent = 'ท้วม / เริ่มเกิน';
+            bmiLabelEl.className = 'badge badge-warning mt-1';
+          } else {
+            bmiLabelEl.textContent = 'น้ำหนักเกินเกณฑ์';
+            bmiLabelEl.className = 'badge badge-danger mt-1';
+          }
+
+          // สูตร Mifflin-St Jeor แบบประมาณการ (Activity Factor 1.45)
+          const genderOffset = gender === 'female' ? -161 : 5;
+          const bmr = 10 * weight + 6.25 * height - 5 * age + genderOffset;
+          let tdee = Math.round(bmr * 1.45);
+
+          if (selectedGoal === 'Cut') tdee = Math.max(1200, tdee - 400);
+          if (selectedGoal === 'Bulk') tdee = tdee + 350;
+
+          calValueEl.textContent = tdee.toLocaleString();
+          calNoteEl.textContent = 'kcal (' + selectedGoal + ')';
+        }
+      }
+
+      /** อัปเดตการ์ดสรุปตัวละครด้านบนจากข้อมูลใน localStorage */
+      function renderSummary(user) {
+        document.getElementById('summary-name').textContent = user.name || 'นักรบฟิตคอร์';
+        document.getElementById('summary-level').textContent = 'Lv. ' + (user.level || 1);
+        document.getElementById('summary-rank').textContent = user.rank || 'Bronze Novice';
+        document.getElementById('summary-goal').textContent = user.goal || 'Health';
+        document.getElementById('summary-streak').textContent = user.streak || 0;
+
+        const maxExp = user.maxExp || 500;
+        const exp = user.exp || 0;
+        const pct = Math.min(100, Math.round((exp / maxExp) * 100));
+        document.getElementById('summary-exp-text').textContent = exp + ' / ' + maxExp + ' EXP';
+        document.getElementById('summary-exp-bar').style.width = pct + '%';
+      }
+
+      /** โหลดข้อมูลผู้ใช้จาก localStorage มาใส่ลงฟอร์ม */
+      function loadProfile() {
+        const user = FitCoreData.getUser();
+        nameInput.value = user.name || '';
+        ageInput.value = user.age || 24;
+        genderInput.value = user.gender || 'male';
+        timeInput.value = user.preferredTime || 'evening';
+        weightInput.value = user.weight || 65;
+        heightInput.value = user.height || 170;
+
+        setGoalSelection(user.goal || 'Health');
+        renderSummary(user);
+        updateCalculatedStats();
+      }
+
+      // ผูก Event คลิกและการกดคีย์บอร์ดกับการ์ดเป้าหมาย
+      goalCards.forEach(function (card) {
+        card.addEventListener('click', function () {
+          setGoalSelection(card.getAttribute('data-goal'));
+        });
+        card.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setGoalSelection(card.getAttribute('data-goal'));
+          }
+        });
+      });
+
+      // อัปเดตค่า BMI / แคลอรี่ทันทีเมื่อพิมพ์น้ำหนัก ส่วนสูง หรืออายุ
+      [weightInput, heightInput, ageInput, genderInput].forEach(function (el) {
+        el.addEventListener('input', updateCalculatedStats);
+        el.addEventListener('change', updateCalculatedStats);
+      });
+
+      // ปุ่มคืนค่าเดิม
+      resetBtn.addEventListener('click', function () {
+        loadProfile();
+        showToast('คืนค่าข้อมูลล่าสุดเรียบร้อย');
+      });
+
+      // บันทึกข้อมูลลง localStorage เมื่อกด Submit
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const name = nameInput.value.trim();
+        const age = parseInt(ageInput.value, 10);
+        const weight = parseFloat(weightInput.value);
+        const height = parseFloat(heightInput.value);
+
+        if (name.length < 2) {
+          showToast('กรุณากรอกชื่อตัวละครอย่างน้อย 2 ตัวอักษร');
+          nameInput.focus();
+          return;
+        }
+        if (isNaN(age) || age < 10 || age > 100) {
+          showToast('กรุณากรอกอายุระหว่าง 10 - 100 ปี');
+          ageInput.focus();
+          return;
+        }
+        if (isNaN(weight) || weight < 25 || weight > 250) {
+          showToast('กรุณากรอกน้ำหนักที่ถูกต้อง (25 - 250 กก.)');
+          weightInput.focus();
+          return;
+        }
+        if (isNaN(height) || height < 100 || height > 240) {
+          showToast('กรุณากรอกส่วนสูงที่ถูกต้อง (100 - 240 ซม.)');
+          heightInput.focus();
+          return;
+        }
+
+        const updatedUser = FitCoreData.saveUser({
+          name: name,
+          age: age,
+          gender: genderInput.value,
+          preferredTime: timeInput.value,
+          weight: weight,
+          height: height,
+          goal: selectedGoal,
+          isLoggedIn: true,
+          isProfileComplete: true
+        });
+
+        renderSummary(updatedUser);
+        if (window.FitCoreNav) {
+          window.FitCoreNav.refresh();
+        }
+        showToast('✅ บันทึกโปรไฟล์และเป้าหมาย "' + selectedGoal + '" เรียบร้อย!');
+      });
+
+      loadProfile();
+    })();
+  </script>
+</body>
+</html>
+
