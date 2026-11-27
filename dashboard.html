@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitCore RPG — แดชบอร์ดสุขภาพ &amp; เควสประจำวัน</title>
+  <!-- เรียกใช้ Design System กลาง -->
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Chart.js ผ่าน CDN สำหรับกราฟพัฒนาการน้ำหนัก -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app-layout">
+    <!-- แถบเมนูกลางจาก js/nav.js -->
+    <div id="fitcore-nav"></div>
+
+    <!-- พื้นที่เนื้อหาหลัก -->
+    <main class="main-content">
+      <div class="container">
+        <header class="page-header">
+          <div>
+            <h1 class="page-title">แดชบอร์ดสุขภาพ &amp; เควสประจำวัน</h1>
+            <p class="page-subtitle" id="dash-greeting">
+              สวัสดีนักรบ! ตรวจสอบค่าสุขภาพ ตารางฝึก AI และบันทึกโภชนาการของคุณวันนี้
+            </p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span class="badge badge-primary" id="dash-goal-badge">เป้าหมาย: Health</span>
+            <a href="profile.html" class="btn-outline btn-sm">แก้ไขโปรไฟล์ →</a>
+          </div>
+        </header>
+
+        <!-- 1. การ์ดคำนวณและแสดงค่า BMI, BMR, TDEE อัตโนมัติ + แถบแคลอรี่วันนี้ -->
+        <section class="card mb-3" aria-labelledby="health-metrics-title">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+            <div>
+              <h2 class="card-title" id="health-metrics-title">ค่าสุขภาพและพลังงานอัตโนมัติ</h2>
+              <p class="text-muted" style="font-size: 0.85rem;" id="health-user-specs">
+                คำนวณจากข้อมูลร่างกายล่าสุดของคุณ
+              </p>
+            </div>
+            <span class="badge badge-success" id="dash-bmi-status">ปกติ</span>
+          </div>
+
+          <div class="grid-3 gap-sm mb-3">
+            <div class="card" style="background: var(--bg-main); padding: 16px;">
+              <div class="text-muted" style="font-size: 0.8rem;">ดัชนีมวลกาย (BMI)</div>
+              <div style="font-size: 1.75rem; font-weight: 700; font-family: var(--font-heading);" id="dash-bmi">--</div>
+              <div class="text-muted" style="font-size: 0.78rem; margin-top: 4px;" id="dash-bmi-desc">เกณฑ์มาตรฐาน 18.5 - 22.9</div>
+            </div>
+
+            <div class="card" style="background: var(--bg-main); padding: 16px;">
+              <div class="text-muted" style="font-size: 0.8rem;">อัตราเผาผลาญพื้นฐาน (BMR)</div>
+              <div style="font-size: 1.75rem; font-weight: 700; font-family: var(--font-heading);" id="dash-bmr">--</div>
+              <div class="text-muted" style="font-size: 0.78rem; margin-top: 4px;">kcal / วัน (ขณะพัก)</div>
+            </div>
+
+            <div class="card" style="background: var(--bg-main); padding: 16px;">
+              <div class="text-muted" style="font-size: 0.8rem;">พลังงานที่ใช้ทั้งหมด (TDEE)</div>
+              <div style="font-size: 1.75rem; font-weight: 700; font-family: var(--font-heading);" id="dash-tdee">--</div>
+              <div class="text-muted" style="font-size: 0.78rem; margin-top: 4px;" id="dash-target-note">เป้าหมาย: -- kcal/วัน</div>
+            </div>
+          </div>
+
+          <!-- แถบแสดงแคลอรี่ที่กินวันนี้เทียบกับเป้าหมาย -->
+          <div style="background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+              <span style="font-weight: 500;">แคลอรี่ที่กินวันนี้เทียบกับเป้าหมาย</span>
+              <span id="dash-cal-text" style="font-weight: 600; color: var(--accent-primary);">0 / 2,000 kcal (0%)</span>
+            </div>
+            <div class="progress-bar progress-bar-lg">
+              <div class="progress-fill" id="dash-cal-bar" style="width: 0%;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">
+              <span id="dash-cal-remaining">คงเหลือ: 2,000 kcal</span>
+              <span id="dash-cal-status-msg">บันทึกอาหารเพื่อติดตามแคลอรี่</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. ส่วน AI Workout & Meal Plan -->
+        <section class="card mb-3" aria-labelledby="ai-plan-title">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+            <div>
+              <h2 class="card-title" id="ai-plan-title">🤖 AI Workout &amp; Meal Plan</h2>
+              <p class="text-muted" style="font-size: 0.85rem;">
+                จำลองการสร้างตารางออกกำลังกายและเมนูอาหารที่เหมาะกับสาย <strong class="text-accent" id="ai-plan-goal">Health</strong>
+              </p>
+            </div>
+            <button type="button" class="btn-primary btn-sm" id="btn-generate-ai-plan">
+              ✨ สร้างตารางด้วย AI
+            </button>
+          </div>
+
+          <div id="ai-plan-status" class="text-muted mb-2" style="font-size: 0.85rem;">
+            กดปุ่ม "สร้างตารางด้วย AI" เพื่อสุ่มและจัดตารางฝึก + เมนูอาหารใหม่ตามเป้าหมายของคุณ
+          </div>
+
+          <div class="grid-2 gap-md">
+            <!-- ตารางท่าออกกำลังกาย -->
+            <div style="background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 1.05rem;">⚔️ ตารางท่าออกกำลังกาย</h3>
+                <span class="badge badge-primary" id="workout-total-exp">รวม 0 EXP</span>
+              </div>
+              <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+                  <thead>
+                    <tr style="border-bottom: 1px solid var(--border-color); text-align: left; color: var(--text-secondary);">
+                      <th style="padding: 8px 6px;">ชื่อท่า</th>
+                      <th style="padding: 8px 6px;">เซ็ต</th>
+                      <th style="padding: 8px 6px;">เวลา / ครั้ง</th>
+                      <th style="padding: 8px 6px;">EXP</th>
+                      <th style="padding: 8px 6px; text-align: right;">ทำเควส</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ai-workout-tbody">
+                    <tr>
+                      <td colspan="5" class="text-muted" style="padding: 16px 6px; text-align: center;">กำลังโหลดตาราง...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- เมนูอาหารที่ตรงกับสาย Health / Cut / Bulk -->
+            <div style="background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 1.05rem;">🥗 เมนูอาหารแนะนำ</h3>
+                <span class="badge badge-success" id="meal-goal-tag">สาย Health</span>
+              </div>
+              <div id="ai-meal-list" style="display: flex; flex-direction: column; gap: 10px;">
+                <div class="text-muted" style="padding: 16px 0; text-align: center;">กำลังโหลดเมนูอาหาร...</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. ฟอร์มบันทึกอาหาร + อัปเดตน้ำหนักตัว + กราฟ Chart.js -->
+        <section class="grid-2 gap-md">
+          <!-- ฟอร์มบันทึกอาหารที่กิน -->
+          <div class="card">
+            <h2 class="card-title mb-2">🍽️ บันทึกอาหารที่กินวันนี้</h2>
+            <form id="food-log-form" style="display: flex; flex-direction: column; gap: 12px;">
+              <div>
+                <label for="food-name" style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px;">
+                  ชื่อเมนูอาหาร
+                </label>
+                <input
+                  type="text"
+                  id="food-name"
+                  placeholder="เช่น อกไก่ย่าง + ข้าวกล้อง"
+                  required
+                  style="width: 100%; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary);"
+                />
+              </div>
+              <div class="grid-2 gap-sm">
+                <div>
+                  <label for="food-calories" style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px;">
+                    แคลอรี่ (kcal)
+                  </label>
+                  <input
+                    type="number"
+                    id="food-calories"
+                    min="1"
+                    max="5000"
+                    placeholder="450"
+                    required
+                    style="width: 100%; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary);"
+                  />
+                </div>
+                <div>
+                  <label for="food-meal-type" style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px;">
+                    มื้ออาหาร
+                  </label>
+                  <select
+                    id="food-meal-type"
+                    style="width: 100%; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary);"
+                  >
+                    <option value="เช้า">มื้อเช้า</option>
+                    <option value="กลางวัน">มื้อกลางวัน</option>
+                    <option value="เย็น">มื้อเย็น</option>
+                    <option value="ว่าง">ของว่าง</option>
+                  </select>
+                </div>
+              </div>
+              <button type="submit" class="btn-primary btn-block">+ บันทึกอาหาร (+15 EXP)</button>
+            </form>
+
+            <div class="mt-3">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <h3 style="font-size: 0.95rem;">รายการที่บันทึกวันนี้</h3>
+                <button type="button" class="btn-outline btn-sm" id="btn-clear-food" style="padding: 4px 10px; font-size: 0.75rem;">ล้างรายการ</button>
+              </div>
+              <div id="food-log-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto;">
+                <p class="text-muted" style="font-size: 0.85rem;">ยังไม่มีรายการอาหารวันนี้</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ฟอร์มอัปเดตน้ำหนักตัว + กราฟพัฒนาการน้ำหนัก Chart.js -->
+          <div class="card">
+            <h2 class="card-title mb-2">⚖️ อัปเดตน้ำหนักตัว &amp; กราฟพัฒนาการ</h2>
+            <form id="weight-log-form" style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 16px;">
+              <div style="flex: 1; min-width: 140px;">
+                <label for="weight-input" style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px;">
+                  น้ำหนักล่าสุด (กก.)
+                </label>
+                <input
+                  type="number"
+                  id="weight-input"
+                  step="0.1"
+                  min="25"
+                  max="300"
+                  placeholder="68.0"
+                  required
+                  style="width: 100%; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary);"
+                />
+              </div>
+              <button type="submit" class="btn-primary">บันทึกน้ำหนัก (+20 EXP)</button>
+            </form>
+
+            <div style="position: relative; height: 260px; width: 100%; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px;">
+              <canvas id="weight-chart" aria-label="กราฟพัฒนาการน้ำหนักตัว"></canvas>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- โหลดสคริปต์ตามลำดับที่กำหนดใน js/nav.js -->
+  <script src="js/mock-data.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
+
