@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>อันดับผู้เล่น & ภารกิจประจำวัน — FitCore RPG</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* สไตล์เฉพาะหน้า Leaderboard & Daily Quests */
+    .page-header {
+      margin-bottom: 24px;
+    }
+
+    .page-title {
+      font-family: var(--font-heading);
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .page-subtitle {
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+
+    /* 1. แถบสถานะผู้เล่นด้านบน */
+    .player-status-card {
+      background: linear-gradient(135deg, var(--bg-card) 0%, #131f38 100%);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+
+    .player-status-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .player-identity {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .player-level-badge {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+      color: #070B14;
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 1rem;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      box-shadow: 0 0 14px var(--accent-glow);
+    }
+
+    .player-name {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .player-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .exp-info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .exp-progress-track {
+      width: 100%;
+      height: 14px;
+      background-color: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+
+    .exp-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-primary), var(--accent-cyan));
+      border-radius: var(--radius-full);
+      transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    /* 2. Daily Quests */
+    .section-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      margin-bottom: 24px;
+    }
+
+    .section-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .quest-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .quest-card {
+      background-color: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      transition: border-color var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .quest-card:hover {
+      border-color: var(--border-light);
+      transform: translateY(-2px);
+    }
+
+    .quest-card.completed {
+      border-color: rgba(34, 197, 94, 0.4);
+      background-color: rgba(34, 197, 94, 0.05);
+    }
+
+    .quest-title {
+      font-family: var(--font-heading);
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .quest-meta {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .quest-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .quest-reward {
+      font-family: var(--font-heading);
+      font-weight: 600;
+      color: var(--accent-cyan);
+      font-size: 0.95rem;
+    }
+
+    .btn-quest {
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      border: none;
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: 0.875rem;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+      color: #070B14;
+      transition: opacity var(--transition-fast), transform var(--transition-fast);
+    }
+
+    .btn-quest:hover:not(:disabled) {
+      opacity: 0.9;
+      transform: scale(1.02);
+    }
+
+    .btn-quest:disabled {
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--success);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      cursor: default;
+    }
+
+    /* 3. Leaderboard Tabs & Table */
+    .filter-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tab-btn {
+      padding: 7px 14px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-input);
+      color: var(--text-secondary);
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .tab-btn:hover {
+      border-color: var(--accent-primary);
+      color: var(--text-primary);
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+      color: #070B14;
+      border-color: transparent;
+      font-weight: 600;
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+    }
+
+    .leaderboard-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .leaderboard-table th {
+      padding: 12px 14px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .leaderboard-table td {
+      padding: 14px;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.925rem;
+      color: var(--text-primary);
+    }
+
+    .leaderboard-table tr.is-current-user {
+      background-color: rgba(56, 189, 248, 0.1);
+    }
+
+    .leaderboard-table tr.is-current-user td:first-child {
+      border-left: 3px solid var(--accent-cyan);
+    }
+
+    .rank-cell {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 1rem;
+      width: 64px;
+    }
+
+    .goal-pill {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      font-size: 0.78rem;
+      font-weight: 500;
+      border: 1px solid var(--border-light);
+      background-color: var(--bg-input);
+    }
+
+    .goal-pill.Health {
+      color: var(--success);
+      border-color: rgba(34, 197, 94, 0.4);
+    }
+
+    .goal-pill.Cut {
+      color: var(--warning);
+      border-color: rgba(245, 158, 11, 0.4);
+    }
+
+    .goal-pill.Bulk {
+      color: var(--purple);
+      border-color: rgba(168, 85, 247, 0.4);
+    }
+
+    /* Level Up Modal Animation */
+    .levelup-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(7, 11, 20, 0.8);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 16px;
+    }
+
+    .levelup-overlay.show {
+      display: flex;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    .levelup-modal {
+      background: linear-gradient(145deg, #0F172A, #16223D);
+      border: 2px solid var(--accent-cyan);
+      border-radius: var(--radius-lg);
+      padding: 32px 28px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 0 36px var(--accent-glow);
+      animation: popIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .levelup-icon {
+      font-size: 3rem;
+      margin-bottom: 10px;
+    }
+
+    .levelup-title {
+      font-family: var(--font-heading);
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      margin-bottom: 8px;
+    }
+
+    .levelup-desc {
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+      font-size: 0.95rem;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-layout">
+    <!-- Navbar / Sidebar จาก js/nav.js -->
+    <div id="fitcore-nav"></div>
+
+    <main class="main-content">
+      <header class="page-header">
+        <h1 class="page-title">🏆 อันดับผู้เล่น &amp; ภารกิจประจำวัน</h1>
+        <p class="page-subtitle">ทำภารกิจออกกำลังกายเพื่อสะสม EXP อัปเลเวล และไต่อันดับในสายของคุณ</p>
+      </header>
+
+      <!-- 1. แถบสถานะผู้เล่นด้านบน -->
+      <section class="player-status-card" aria-label="สถานะผู้เล่นปัจจุบัน">
+        <div class="player-status-top">
+          <div class="player-identity">
+            <span class="player-level-badge" id="status-level">Lv.1</span>
+            <span class="player-name" id="status-name">นักรบฟิตคอร์</span>
+          </div>
+          <div class="player-meta">
+            <span>🏅 แรงก์: <strong id="status-rank">Bronze Novice</strong></span>
+            <span>•</span>
+            <span>🎯 สาย: <strong id="status-goal">Health</strong></span>
+          </div>
+        </div>
+        <div class="exp-info-row">
+          <span>ค่าประสบการณ์ (EXP)</span>
+          <span id="status-exp-text">0 / 500 EXP</span>
+        </div>
+        <div class="exp-progress-track">
+          <div class="exp-progress-fill" id="status-exp-bar" style="width: 0%;"></div>
+        </div>
+      </section>
+
+      <!-- 2. รายการภารกิจออกกำลังกายประจำวัน (Daily Quests) -->
+      <section class="section-card" aria-label="ภารกิจออกกำลังกายประจำวัน">
+        <div class="section-header">
+          <h2 class="section-title">⚔️ ภารกิจออกกำลังกายประจำวัน (Daily Quests)</h2>
+          <span class="text-secondary" id="quest-progress-summary" style="font-size: 0.875rem;">สำเร็จแล้ว 0 / 0</span>
+        </div>
+        <div class="quest-grid" id="daily-quests-list"></div>
+      </section>
+
+      <!-- 3. ตารางจัดอันดับ (Leaderboard) -->
+      <section class="section-card" aria-label="ตารางจัดอันดับผู้เล่น">
+        <div class="section-header">
+          <h2 class="section-title">📊 ตารางจัดอันดับ (Leaderboard)</h2>
+          <div class="filter-tabs" id="leaderboard-tabs" role="tablist">
+            <button type="button" class="tab-btn active" data-goal="All">รวมทั้งหมด</button>
+            <button type="button" class="tab-btn" data-goal="Health">Health</button>
+            <button type="button" class="tab-btn" data-goal="Cut">Cut</button>
+            <button type="button" class="tab-btn" data-goal="Bulk">Bulk</button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th>อันดับ</th>
+                <th>ผู้เล่น</th>
+                <th>สาย</th>
+                <th>เลเวล</th>
+                <th>แรงก์</th>
+                <th>EXP สะสม</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal แจ้งเตือน Level Up -->
+  <div class="levelup-overlay" id="levelup-modal" role="dialog" aria-modal="true" aria-labelledby="levelup-title">
+    <div class="levelup-modal">
+      <div class="levelup-icon">🎉</div>
+      <h2 class="levelup-title" id="levelup-title">LEVEL UP!</h2>
+      <p class="levelup-desc" id="levelup-desc">ยินดีด้วย! คุณเลื่อนขั้นเป็น Level 5 แล้ว</p>
+      <button type="button" class="btn-quest" id="levelup-close-btn" style="padding: 10px 24px;">ลุยต่อเลย!</button>
+    </div>
+  </div>
+
+  <!-- โหลดสคริปต์ตามลำดับที่ js/nav.js กำหนด -->
+  <script src="js/mock-data.js"></script>
+  <script src="js/nav.js"></script>
+  <script src="js/leaderboard.js"></script>
+</body>
+
+</html>
