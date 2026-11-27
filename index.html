@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FitCore RPG — เข้าสู่ระบบ / สมัครสมาชิก</title>
+  <!-- เรียกใช้ Design System กลาง -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- โครงสร้างหน้า Authentication แบบกึ่งกลาง รองรับคอมและมือถือ -->
+  <main class="auth-wrapper">
+    <section class="card auth-card">
+      <!-- โลโก้และคำโปรยของแอป -->
+      <div style="text-align: center; margin-bottom: 24px;">
+        <div class="brand-logo" style="justify-content: center; font-size: 1.6rem; margin-bottom: 8px;">
+          <span class="brand-icon" style="width: 44px; height: 44px; font-size: 1.1rem;">FC</span>
+          <span>FitCore <span class="text-accent">RPG</span></span>
+        </div>
+        <p class="text-muted" style="font-size: 0.92rem;">
+          เปลี่ยนทุกหยดเหงื่อให้เป็นค่า EXP อัปเลเวลร่างกายของคุณไปด้วยกัน
+        </p>
+      </div>
+
+      <!-- ปุ่มสลับโหมด เข้าสู่ระบบ / สมัครสมาชิก -->
+      <div class="auth-tabs" role="tablist" aria-label="สลับโหมดยืนยันตัวตน">
+        <button type="button" class="auth-tab-btn active" id="tab-login" role="tab" aria-selected="true">
+          เข้าสู่ระบบ
+        </button>
+        <button type="button" class="auth-tab-btn" id="tab-register" role="tab" aria-selected="false">
+          สมัครสมาชิก
+        </button>
+      </div>
+
+      <!-- กล่องแสดงข้อความแจ้งเตือนข้อผิดพลาด -->
+      <div id="auth-error" class="alert-error hidden" role="alert"></div>
+
+      <!-- ฟอร์มเข้าสู่ระบบ (Login Form) -->
+      <form id="login-form" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="login-email">อีเมล</label>
+          <input
+            type="email"
+            id="login-email"
+            class="form-control"
+            placeholder="player@fitcore.rpg"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="login-password">รหัสผ่าน</label>
+          <input
+            type="password"
+            id="login-password"
+            class="form-control"
+            placeholder="กรอกรหัสผ่านอย่างน้อย 4 ตัวอักษร"
+            required
+          />
+        </div>
+
+        <button type="submit" class="btn-primary btn-block mt-2">
+          ⚔️ เข้าสู่ระบบเลย
+        </button>
+
+        <button type="button" id="demo-login-btn" class="btn-outline btn-block mt-1">
+          ทดลองเข้าใช้งานด้วยบัญชีตัวอย่าง (Demo)
+        </button>
+      </form>
+
+      <!-- ฟอร์มสมัครสมาชิก (Register Form) -->
+      <form id="register-form" class="hidden" novalidate>
+        <div class="form-group">
+          <label class="form-label" for="reg-name">ชื่อตัวละคร / ชื่อเล่น</label>
+          <input
+            type="text"
+            id="reg-name"
+            class="form-control"
+            placeholder="เช่น นักรบสายลีน"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="reg-email">อีเมล</label>
+          <input
+            type="email"
+            id="reg-email"
+            class="form-control"
+            placeholder="you@example.com"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="reg-password">รหัสผ่าน</label>
+          <input
+            type="password"
+            id="reg-password"
+            class="form-control"
+            placeholder="ตั้งรหัสผ่านอย่างน้อย 4 ตัวอักษร"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="reg-confirm">ยืนยันรหัสผ่าน</label>
+          <input
+            type="password"
+            id="reg-confirm"
+            class="form-control"
+            placeholder="กรอกรหัสผ่านอีกครั้ง"
+            required
+          />
+        </div>
+
+        <button type="submit" class="btn-primary btn-block mt-2">
+          🛡️ สร้างตัวละคร & ตั้งค่าโปรไฟล์
+        </button>
+      </form>
+    </section>
+  </main>
+
+  <!-- โหลดระบบข้อมูลจำลองจาก localStorage -->
+  <script src="js/mock-data.js"></script>
+  <script>
+    (function () {
+      const tabLogin = document.getElementById('tab-login');
+      const tabRegister = document.getElementById('tab-register');
+      const loginForm = document.getElementById('login-form');
+      const registerForm = document.getElementById('register-form');
+      const errorBox = document.getElementById('auth-error');
+      const demoBtn = document.getElementById('demo-login-btn');
+
+      // เติมอีเมลล่าสุดจาก localStorage เพื่อความสะดวก
+      const currentUser = FitCoreData.getUser();
+      if (currentUser && currentUser.email) {
+        document.getElementById('login-email').value = currentUser.email;
+      }
+
+      /** แสดงหรือซ่อนข้อความผิดพลาด */
+      function showError(message) {
+        if (!message) {
+          errorBox.classList.add('hidden');
+          errorBox.textContent = '';
+          return;
+        }
+        errorBox.textContent = message;
+        errorBox.classList.remove('hidden');
+      }
+
+      /** สลับระหว่างโหมดเข้าสู่ระบบและสมัครสมาชิก */
+      function switchMode(mode) {
+        showError('');
+        if (mode === 'login') {
+          tabLogin.classList.add('active');
+          tabLogin.setAttribute('aria-selected', 'true');
+          tabRegister.classList.remove('active');
+          tabRegister.setAttribute('aria-selected', 'false');
+          loginForm.classList.remove('hidden');
+          registerForm.classList.add('hidden');
+        } else {
+          tabRegister.classList.add('active');
+          tabRegister.setAttribute('aria-selected', 'true');
+          tabLogin.classList.remove('active');
+          tabLogin.setAttribute('aria-selected', 'false');
+          registerForm.classList.remove('hidden');
+          loginForm.classList.add('hidden');
+        }
+      }
+
+      /** นำทางไปยังหน้าถัดไปหลังเข้าสู่ระบบสำเร็จ */
+      function redirectAfterLogin(user) {
+        if (user && user.isProfileComplete) {
+          window.location.href = 'dashboard.html';
+        } else {
+          window.location.href = 'profile.html';
+        }
+      }
+
+      tabLogin.addEventListener('click', function () {
+        switchMode('login');
+      });
+
+      tabRegister.addEventListener('click', function () {
+        switchMode('register');
+      });
+
+      // จัดการฟอร์มเข้าสู่ระบบ
+      loginForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value.trim();
+        const password = document.getElementById('login-password').value;
+
+        if (!email || !email.includes('@')) {
+          showError('กรุณากรอกอีเมลให้ถูกต้อง');
+          return;
+        }
+        if (password.length < 4) {
+          showError('รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร');
+          return;
+        }
+
+        const updatedUser = FitCoreData.saveUser({
+          email: email,
+          isLoggedIn: true
+        });
+        redirectAfterLogin(updatedUser);
+      });
+
+      // ปุ่มทดลองเข้าใช้งานทันที
+      demoBtn.addEventListener('click', function () {
+        const updatedUser = FitCoreData.saveUser({ isLoggedIn: true });
+        redirectAfterLogin(updatedUser);
+      });
+
+      // จัดการฟอร์มสมัครสมาชิกใหม่ (เริ่มที่ Level 1 และเด้งไปหน้าตั้งค่าโปรไฟล์)
+      registerForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const name = document.getElementById('reg-name').value.trim();
+        const email = document.getElementById('reg-email').value.trim();
+        const password = document.getElementById('reg-password').value;
+        const confirm = document.getElementById('reg-confirm').value;
+
+        if (name.length < 2) {
+          showError('กรุณากรอกชื่อตัวละครอย่างน้อย 2 ตัวอักษร');
+          return;
+        }
+        if (!email || !email.includes('@')) {
+          showError('กรุณากรอกอีเมลให้ถูกต้อง');
+          return;
+        }
+        if (password.length < 4) {
+          showError('รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร');
+          return;
+        }
+        if (password !== confirm) {
+          showError('รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน');
+          return;
+        }
+
+        FitCoreData.saveUser({
+          name: name,
+          email: email,
+          level: 1,
+          exp: 0,
+          maxExp: 500,
+          streak: 1,
+          isLoggedIn: true,
+          isProfileComplete: false
+        });
+
+        window.location.href = 'profile.html';
+      });
+    })();
+  </script>
+</body>
+</html>
+
